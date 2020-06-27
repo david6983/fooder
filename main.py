@@ -1,6 +1,14 @@
+from skimage.color import rgb2gray, rgb2lab
 from skimage.io import imread, imshow
+from skimage.feature import greycomatrix, greycoprops
+from skimage.filters import threshold_otsu
+from skimage.filters import median
+from sklearn.metrics.pairwise import euclidean_distances
+from scipy.stats import moment, skew
+from skimage.morphology import area_closing
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 # step 1 - read the images and apply gray scale
 # note: the images are already scaled
@@ -54,4 +62,40 @@ data_set_colored = {
 7. euclidean distance
 8. ranking
 """
+
+# let's try glcm first without noise removal on 1 category
+
+images = read_data_set("dataset/donuts", extensions)
+
+im = rgb2gray(images[3])
+im = median(im)
+thresh = threshold_otsu(im)
+im = im > thresh
+im = area_closing(im, area_threshold=64)
+im = im.astype(np.uint8)
+print(im)
+#plt.imshow(im, cmap=plt.cm.gray)
+#plt.show()
+glcm = greycomatrix(im, distances=[1], angles=[0, np.pi/4, np.pi/2, 3*np.pi/4], levels=256)
+print(greycoprops(glcm, 'contrast')[0, 0])
+print(greycoprops(glcm, 'dissimilarity')[0, 0])
+print(greycoprops(glcm, 'homogeneity')[0, 0])
+print(greycoprops(glcm, 'ASM')[0, 0])
+print(greycoprops(glcm, 'energy')[0, 0])
+print(greycoprops(glcm, 'correlation')[0, 0])
+
+# rgb to L*a*b
+cie_img = rgb2lab(images[3])
+print(cie_img.shape)
+# color moment
+print("mean: ")
+mean = np.mean(cie_img, axis=(0, 1)) # mean for L, a, b
+print(mean)
+print("variance: ")
+variance = np.var(cie_img)
+print(variance)
+print("skewness")
+skewness = skew(cie_img)
+print(skewness)
+
 

@@ -13,9 +13,38 @@ except ImportError:
 
 root = tk.Tk()
 
+# Gets the requested values of the height and widht.
+windowWidth = root.winfo_reqwidth()
+windowHeight = root.winfo_reqheight()
+print("Width", windowWidth, "Height", windowHeight)
+
+# Gets both half the screen width/height and window width/height
+positionRight = int(root.winfo_screenwidth() /4 - windowWidth / 2)
+positionDown = int(root.winfo_screenheight()/4 - windowHeight/2)
+
+# Positions the window in the center of the page.
+root.geometry("1280x720+{}+{}".format(positionRight, positionDown))
 style = ttk.Style(root)
 style.theme_use("clam")
 
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
+
+## Le canvas
+cnv = Canvas(root)
+cnv.grid(row=0, column=0, sticky='nswe')
+
+## Les scrollbars
+hScroll = Scrollbar(root, orient=HORIZONTAL, command=cnv.xview)
+hScroll.grid(row=1, column=0, sticky='we')
+
+vScroll = Scrollbar(root, orient=VERTICAL, command=cnv.yview)
+vScroll.grid(row=0, column=1, sticky='ns')
+
+cnv.configure(xscrollcommand=hScroll.set, yscrollcommand=vScroll.set)
+
+## Le Frame, dans le Canvas, mais sans pack ou grid
+frm = Frame(cnv)
 
 def c_open_file_old():
     rep = filedialog.askopenfilenames(
@@ -31,21 +60,25 @@ def c_open_file_old():
 
         load = Image.open(rep[0])
         render = ImageTk.PhotoImage(load)
-        img = Label(root, image=render)
+        img = Label(frm, image=render)
         img.image = render
-        img.grid(row=2, column=0, padx=4, pady=30, sticky='ew')
-        rank = Label(root, text="Top 10").grid(row=3, column=0, padx=4, pady=30, sticky='ew')
+        img.grid(row=2, column=0, padx=5, pady=50, sticky='ew')
+        rank = Label(frm, text="Top 10").grid(row=1, column=1, padx=4, pady=30, sticky='ew')
         data = []
         data = get_all_images("dataset/macarons/", "jpg")
-        ranking = 0
+        ranking = 1
         for imgToRank in data:
             loadRank = Image.open(imgToRank)
-            loadRank = resizeimage.resize_width(loadRank, 150)
+            loadRank = resizeimage.resize_width(loadRank, 200)
             renderRank = ImageTk.PhotoImage(loadRank)
-            imgRank = Label(root, image=renderRank)
+            imgRank = Label(frm, image=renderRank)
             imgRank.image = renderRank
-            imgRank.grid(row=4, column=ranking, padx=4, pady=4, sticky='ew')
+            imgRank.grid(row=2, column=ranking, padx=10, pady=0, sticky='ew')
             ranking += 1
+        frm.update()
+        cnv.create_window(0, 0, window=frm, anchor=NW)
+        cnv.configure(scrollregion=cnv.bbox(ALL))
+
         print(data)
 
     except IndexError:
@@ -67,8 +100,7 @@ def get_all_images(folder, ext):
     # Get list of all files
     return all_files
 
-
-ttk.Button(root, text="Open files", command=c_open_file_old).grid(row=1, column=0, padx=4, pady=4, sticky='ew')
+ttk.Button(cnv, text="Open files", command=c_open_file_old).grid(row=1, column=0, padx=4, pady=4, sticky='ew')
 
 
 root.mainloop()

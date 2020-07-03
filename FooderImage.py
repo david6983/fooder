@@ -78,9 +78,9 @@ class FooderImage:
 
     def debug(self):
         print("image: " + self.full_path)
-        print("\ncategory: " + self.category)
-        print("\nis_grey: " + str(self.is_gray))
-        print("\nglcm_features: ")
+        print("\tcategory: " + self.category)
+        print("\tis_grey: " + str(self.is_gray))
+        print("\tglcm_features: ")
         print(self.get_glcm_props())
-        print("\ncolor_moment: ")
+        print("\tcolor_moment: ")
         print(self.color_moment)

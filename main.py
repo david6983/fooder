@@ -11,13 +11,15 @@ def read_data_set(dir_name, allowed_extensions, as_gray=False):
     all_files = list()
     # Iterate over all the entries
     for entry in list_of_file:
+        if entry is ".DS_Store":
+            break
         # Create full path
         full_path = os.path.join(dir_name, entry)
         # If entry is a directory then get the list of files in this directory
         if os.path.isdir(full_path):
             all_files = all_files + read_data_set(full_path, allowed_extensions, as_gray)
         else:
-            if full_path.split("/")[2].split(".")[1] in allowed_extensions:
+            if entry.split(".")[1] in allowed_extensions:
                 all_files.append(FooderImage(full_path,
                                              category=full_path.split("/")[1],
                                              as_gray=as_gray,
@@ -41,50 +43,7 @@ def display_data_set(images_data_set):
 
 print("Reading dataset...")
 extensions = ["jpg", "jpeg"]
-data_set_colored = {
-    "donuts": read_data_set("dataset/donuts", extensions),
-    "macarons": read_data_set("dataset/macarons", extensions),
-    "pancake": read_data_set("dataset/pancake", extensions),
-    "pizza": read_data_set("dataset/pizza", extensions),
-    "sushi": read_data_set("dataset/sushi", extensions)
-}
+data_set = read_data_set("dataset/", extensions)
 print("finish")
 
-print(data_set_colored["donuts"][3].debug())
-
-# let's try glcm first without noise removal on 1 category
-"""
-images = read_data_set("dataset/donuts", extensions)
-
-im = rgb2gray(images[3])
-im = median(im)
-thresh = threshold_otsu(im)
-im = im > thresh
-im = area_closing(im, area_threshold=64)
-im = im.astype(np.uint8)
-print(im)
-#plt.imshow(im, cmap=plt.cm.gray)
-#plt.show()
-glcm = greycomatrix(im, distances=[1], angles=[0, np.pi/4, np.pi/2, 3*np.pi/4], levels=256)
-print(greycoprops(glcm, 'contrast')[0, 0])
-print(greycoprops(glcm, 'dissimilarity')[0, 0])
-print(greycoprops(glcm, 'homogeneity')[0, 0])
-print(greycoprops(glcm, 'ASM')[0, 0])
-print(greycoprops(glcm, 'energy')[0, 0])
-print(greycoprops(glcm, 'correlation')[0, 0])
-
-# rgb to L*a*b
-cie_img = rgb2lab(images[3])
-print(cie_img.shape)
-# color moment
-print("mean: ")
-mean = np.mean(cie_img, axis=(0, 1)) # mean for L, a, b
-print(mean)
-print("variance: ")
-variance = np.var(cie_img)
-print(variance)
-print("skewness")
-skewness = skew(cie_img)
-print(skewness)
-
-"""
+print(data_set[3].debug())

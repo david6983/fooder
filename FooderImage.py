@@ -3,7 +3,6 @@ from skimage.io import imread, imshow
 from skimage.feature import greycomatrix, greycoprops
 from skimage.filters import threshold_otsu
 from skimage.filters import median
-from sklearn.metrics.pairwise import euclidean_distances
 from scipy.stats import moment, skew, kurtosis
 from skimage.morphology import area_closing
 import matplotlib.pyplot as plt
@@ -12,18 +11,22 @@ import numpy as np
 
 
 class FooderImage:
+    count = 0
+
     def __init__(self, full_path, category="",
                  as_gray=False,
                  as_pre_processed=False,
                  auto_compute_glcm=False,
                  auto_compute_color_moment=False):
         self.full_path = full_path
+        self.img_id = FooderImage.count
         self.category = category
         self.is_gray = as_gray
         self.img = imread(self.full_path, self.is_gray)
         self.cie_img = rgb2lab(self.img)
         self.color_moment = None
         self.glcm = None
+        FooderImage.count += 1
         if as_pre_processed:
             self.pre_process()
         if auto_compute_glcm:
@@ -77,10 +80,13 @@ class FooderImage:
         }
 
     def debug(self):
-        print("image: " + self.full_path)
+        print("image" + str(self.img_id) + ": " + self.full_path)
         print("\tcategory: " + self.category)
         print("\tis_grey: " + str(self.is_gray))
         print("\tglcm_features: ")
         print(self.get_glcm_props())
         print("\tcolor_moment: ")
         print(self.color_moment)
+
+    def get_feature_vector(self):
+        return {**self.color_moment, **self.get_glcm_props()}

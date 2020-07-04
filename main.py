@@ -1,7 +1,16 @@
-from FooderImage import *
+from matplotlib import pyplot
+from sklearn.metrics import precision_recall_curve
 
-# step 1 - read the images and apply gray scale
-# note: the images are already scaled
+from FooderImage import *
+import math
+
+
+def simple_query(full_path, as_gray=False):
+    return FooderImage(full_path,
+                       as_gray=as_gray,
+                       as_pre_processed=True,
+                       auto_compute_glcm=True,
+                       auto_compute_color_moment=True)
 
 
 def read_data_set(dir_name, allowed_extensions, as_gray=False):
@@ -25,25 +34,96 @@ def read_data_set(dir_name, allowed_extensions, as_gray=False):
                                              as_gray=as_gray,
                                              as_pre_processed=True,
                                              auto_compute_glcm=True,
-                                             auto_compute_color_moment=True)
-                                 )
+                                             auto_compute_color_moment=True))
 
     return all_files
 
 
+def get_image_by_id(data_set, img_id):
+    for image in data_set:
+        if image.img_id is img_id:
+            return image
+
+
 def display_data_set(images_data_set):
-    for category in images_data_set:
-        print("displaying category " + category)
-        for image in images_data_set[category]:
-            plt.imshow(image)
-            plt.show()
+    for image in images_data_set:
+        image.debug()
 
 
+def abs2(src, target):
+    return abs(src - target) ** 2
 
 
-print("Reading dataset...")
-extensions = ["jpg", "jpeg"]
-data_set = read_data_set("dataset/", extensions)
-print("finish")
+def euclidean_distance(i1, i2, round_value):
+    f1 = i1.get_feature_vector()
+    f2 = i2.get_feature_vector()
+    d = 0
+    for v, v2 in zip(f1.values(), f2.values()):
+        d += abs2(v, v2)
 
-print(data_set[3].debug())
+    return round(math.sqrt(d) / 100, round_value)
+
+
+def generate_euclidean_set(data_set, query_image, round_value):
+    row = []
+    for image in data_set:
+        row.append((image.img_id, euclidean_distance(image, query_image, round_value)))
+
+    return sorted(row, key=lambda x: x[1])
+
+
+def top_n_similarity(n, euclidean_distance_set):
+    top_n = []
+    for i in range(0, n):
+        top_n.append(euclidean_distance_set[i])
+    return top_n
+
+
+def estimate_relevant_images_by_user_input(data_set, top_n):
+    relevant_images = []
+    relevant_scores = []
+    for image in top_n:
+        print(get_image_by_id(data_set, image[0]).debug())
+        relevant = int(input("Is this image relevant ? (1: yes, 0: no): "))
+        relevant_images.append(relevant)
+        relevant_scores.append(image[1])
+    return relevant_images, relevant_scores
+
+
+def pr_curve(relevant_images, relevant_scores):
+    precision, recall, _ = precision_recall_curve(relevant_images, relevant_scores)
+    return precision, recall
+
+
+def display_pr_curve(precision, recall):
+    pyplot.plot(recall, precision, marker='.', label='Colour-Texture')
+    # axis labels
+    pyplot.xlabel('Recall')
+    pyplot.ylabel('Precision')
+    # show the legend
+    pyplot.legend()
+    # show the plot
+    pyplot.show()
+
+
+def main():
+    print("Reading dataset...")
+    extensions = ["jpg", "jpeg"]
+    data_set = read_data_set("dataset/", extensions)
+    #display_data_set(data_set)
+    print("finish")
+
+    print(data_set[3].get_feature_vector())
+
+    # simple query
+    q = simple_query("querry/1332510.jpg")
+    print(q.debug())
+    print("top: ")
+    top_n = top_n_similarity(10, generate_euclidean_set(data_set, q, 5))
+    relevant_images, relevant_scores = estimate_relevant_images_by_user_input(data_set, top_n)
+    precision, recall = pr_curve(relevant_images, relevant_scores)
+    display_pr_curve(precision, recall)
+
+
+if __name__ == '__main__':
+    main()

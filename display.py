@@ -1,125 +1,128 @@
-from msilib.schema import RadioButton
+import tkinter as tk
+import tkinter.ttk as ttk
+import logging
+from tkinter import *
+from tkinter import filedialog
 
-try:
-    import os
-    import tkinter as tk
-    import tkinter.ttk as ttk
-    from tkinter import filedialog
-    from tkinter import *
-    from PIL import ImageTk, Image
-    from resizeimage import resizeimage
-except ImportError:
-    import Tkinter as tk
-    import ttk
-    import tkFileDialog as filedialog
+from PIL import ImageTk, Image
+from resizeimage import resizeimage
+import os
+
+
+def center(win, width, height):
+    win.update_idletasks()
+    x = (win.winfo_screenwidth() // 2) - (width // 2)
+    y = (win.winfo_screenheight() // 2) - (height // 2)
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
 
 root = tk.Tk()
+root.title("Fooder (CBIR Food Image Retrieval) by Haioum David and Boillot Mathias")
 
-# Gets the requested values of the height and widht.
-windowWidth = root.winfo_reqwidth()
-windowHeight = root.winfo_reqheight()
-print("Width", windowWidth, "Height", windowHeight)
-
-# Gets both half the screen width/height and window width/height
-positionRight = int(root.winfo_screenwidth() / 4 - windowWidth / 2)
-positionDown = int(root.winfo_screenheight() / 4 - windowHeight / 2)
-
-# Positions the window in the center of the page.
-root.geometry("1280x720+{}+{}".format(positionRight, positionDown))
+center(root, width=625, height=300)
 style = ttk.Style(root)
 style.theme_use("clam")
 
 root.grid_rowconfigure(0, weight=1)
 root.grid_columnconfigure(0, weight=1)
 
+main_view = Frame(root)
+main_view.grid(row=0, column=0)
 
-frm = Frame(root)
-frm.grid(row=0, column=0)
-## Le canvas
-cnv = Canvas(frm)
-cnv.grid(row=0, column=0, sticky='nswe')
+# top n images in a scrollable window on the left
+main_window = Canvas(main_view)
+main_window.grid(row=0, column=0, sticky='nswe')
 
+# query information on the right
+query_view = Canvas(main_view)
+query_view.grid(row=0, column=2, sticky='nswe')
 
+# the frame goes inside the canvas without grid system
 
-## Le canvas
-cnv2 = Canvas(frm)
-cnv2.grid(row=0, column=2, sticky='nswe')
+top_n_view_frame = Frame(main_window)
+top_n_view_frame.grid(row=0, column=0)
 
-## Les scrollbars
-hScroll = Scrollbar(frm, orient=HORIZONTAL, command=cnv.xview)
-hScroll.grid(row=1, column=0, sticky='we')
-
-vScroll = Scrollbar(frm, orient=VERTICAL, command=cnv.yview)
-vScroll.grid(row=0, column=1, sticky='ns')
-
-cnv.configure(xscrollcommand=hScroll.set, yscrollcommand=vScroll.set)
-
-## Le Frame, dans le Canvas, mais sans pack ou grid
-
-frm1 = Frame(cnv)
-frm1.grid(row=0, column=0)
-
-frm2 = Frame(cnv2)
-frm2.grid(row=0, column=1)
+query_view_frame = Frame(query_view)
+query_view_frame.grid(row=0, column=1)
 
 
-
-def c_open_file_old():
-    for widget in cnv.winfo_children():
-        ## CHOIX 1:
+def open_image_callback():
+    # clear the view
+    for widget in main_window.winfo_children():
         widget.grid_forget()
 
-
+    # open a file dialog that can open only .jpeg or .jpg images
     rep = filedialog.askopenfilenames(
         parent=root,
         initialdir='/',
         initialfile='tmp',
         filetypes=[
             ("JPEG", "*.jpg"),
-            ("PNG", "*.png"),
-            ("All files", "*")])
+            ("JPEG", "*.jpeg")
+        ])
     try:
-        print(rep[0])
-
-        load = Image.open(rep[0])
-        load = resizeimage.resize_width(load, 380)
-        render = ImageTk.PhotoImage(load)
-        img = Label(frm2, image=render)
-        img.image = render
+        center(root, width=1000, height=500)
+        # rep[0] is the file path of the image selected
+        query_image_loaded = Image.open(rep[0])
+        # resize the image for the display only
+        query_image_loaded = resizeimage.resize_width(query_image_loaded, 200)
+        # render the image as tkinter canvas and place it in the main window
+        query_image_render = ImageTk.PhotoImage(query_image_loaded)
+        img = Label(query_view_frame, image=query_image_render)
+        img.image = query_image_render
         img.grid(row=1, column=1, padx=50, pady=3, sticky='ew')
-        queryLabel = Label(frm2, text="Query",font=("none", 20)).grid(row=0, column=1, padx=4, pady=30,sticky='ew')
-        categoryLabel= Label(frm, text="Category = ").grid(row=2, column= 2, padx=50, pady=5)
-        #TODO Command for button precision
-        precisionLabel=  Button(frm2, text="Precision", command=c_open_file_old).grid(row=1, column= 2, padx=50,pady=10)
-        rank = Label(frm1, text="Top 10 Similarity",font=("none", 20)).grid(row=0, column=0, padx=5, pady=30)
 
-        data = get_all_images("dataset/macarons/", "jpg")
+        # Display query image information
+        Label(query_view_frame, text="Query", font=("none", 20)).grid(row=0, column=1, padx=4, pady=30, sticky='ew')
+        Label(main_view, text="Category: ").grid(row=2, column=2, padx=50, pady=5)
+        # TODO Command for button precision
+        Button(query_view_frame,
+               text="display p/r curve",
+               command=open_image_callback
+               ).grid(row=1, column=2, padx=50, pady=10)
+        # Label for the top 10 similarity window
+        Label(top_n_view_frame, text="Top 10 similarity", font=("none", 20)).grid(row=0, column=0, padx=5, pady=30)
+
+        # get the top_n similarity images here
+        # TODO merge back-end here
+        top_images = get_all_images("dataset/macarons/", "jpg")
+
+        # ranking start from top 1
         ranking = 1
 
-        for imgToRank in data:
-            loadRank = Image.open(imgToRank)
-            loadRank = resizeimage.resize_width(loadRank, 200)
-            renderRank = ImageTk.PhotoImage(loadRank)
-            imgRank = Label(frm1, image=renderRank)
-            imgRank.image = renderRank
-            imgRank.grid(row=ranking, column=0, padx=4, pady=0, sticky='ew')
-            my_details = "d = " + str("num_d") + " \n category = " + "category_detected" + "\n"
-            Label(frm1, text=my_details).grid(row = ranking, column = 1);
+        for retrieved_image in top_images:
+            # open the image and resize it for the display only
+            image = Image.open(retrieved_image)
+            image = resizeimage.resize_width(image, 200)
+            # render it as tkinter component
+            tk_image = ImageTk.PhotoImage(image)
+            tk_image_label = Label(top_n_view_frame, image=tk_image)
+            tk_image_label.image = tk_image
+            tk_image_label.grid(row=ranking, column=0, padx=4, pady=0, sticky='ew')
+            # TODO print distance here
+            image_detail = "distance: " + str("0.345") + " \n category: " + "pancake" + "\n"
+            # display the rank
+            Label(top_n_view_frame, text=image_detail).grid(row=ranking, column=1)
+            # increase the rank number displayed
             ranking += 1
 
-        frm1.update()
-        cnv.create_window(0, 0, window=frm1, anchor=NW)
-        cnv.configure(scrollregion=cnv.bbox(ALL))
-        newQuery=  Button(frm, text="New Query", command=c_open_file_old).grid(row=2, column= 1, padx=50,pady=10)
+        # update the frame
+        top_n_view_frame.update()
+        main_window.create_window(0, 0, window=top_n_view_frame, anchor=NW)
+        # add scrollbars
+        h_scroll = Scrollbar(main_view, orient=HORIZONTAL, command=main_window.xview)
+        h_scroll.grid(row=1, column=0, sticky='we')
+        v_scroll = Scrollbar(main_view, orient=VERTICAL, command=main_window.yview)
+        v_scroll.grid(row=0, column=1, sticky='ns')
+        main_window.configure(xscrollcommand=h_scroll.set, yscrollcommand=v_scroll.set)
 
-
-
-
-
-        print(data)
+        main_window.configure(scrollregion=main_window.bbox(ALL))
+        Button(main_view, text="New Query", command=open_image_callback).grid(row=2, column=1, padx=50, pady=10)
 
     except IndexError:
-        print("No file selected")
+        # if we don't select any image, re-render the first view and display an error message
+        main_view_start("No file selected")
+        logging.warning("No file selected")
 
 
 def get_all_images(folder, ext):
@@ -138,14 +141,25 @@ def get_all_images(folder, ext):
     return all_files
 
 
-def frame_start():
-    title = Label(cnv, text="Fooder (Food Image Retrieval)", font=("none", 40))
+def main_view_start(error_message):
+    title = Label(main_window, text="Fooder (CBIR Food Image Retrieval)", font=("none", 40))
     title.grid(row=1, column=0, padx=4, pady=4)
-    subtitle = Label(cnv, text="type of food available : donuts, sushis, pizzas, pancakes, macarons", font=("none", 20))
+
+    subtitle = Label(main_window,
+                     text="type of food available : donuts, sushis, pizzas, pancakes, macarons",
+                     font=("none", 20))
     subtitle.grid(row=2, column=0, padx=4, pady=4)
 
-    Button(cnv, text="Open files", command=c_open_file_old).grid(row=3, column=0, padx=4, pady=100)
+    Button(main_window,
+           text="Open Query Image",
+           font=('Helvetica', '20'),
+           command=open_image_callback,
+           padx=50
+           ).grid(row=3, column=0, padx=0, pady=50)
+    # display error message
+    Label(main_window, text=error_message, font=("none", 20), fg="red")
 
-frame_start()
+
+main_view_start("")
 
 root.mainloop()

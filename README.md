@@ -16,6 +16,7 @@ Note: You can also use pycharm community to test the program easily
 pip3 install matplotlib
 pip3 install sklearn
 pip3 install scikit-image
+pip3 install openpyxl
 ```
 
 # Running the application from terminal
@@ -24,3 +25,8 @@ pip3 install scikit-image
 python3 main.py
 ```
     
+# generate the excel file
+
+```
+python3 excel.py
+```

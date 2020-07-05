@@ -8,18 +8,14 @@ from PIL import ImageTk, Image
 from resizeimage import resizeimage
 import os
 
-
-def center(win, width, height):
-    win.update_idletasks()
-    x = (win.winfo_screenwidth() // 2) - (width // 2)
-    y = (win.winfo_screenheight() // 2) - (height // 2)
-    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
-
+"""
+This code is deprecated and no longer used !
+"""
 
 root = tk.Tk()
 root.title("Fooder (CBIR Food Image Retrieval) by Haioum David and Boillot Mathias")
 
-center(root, width=625, height=300)
+#center(root, width=625, height=300)
 style = ttk.Style(root)
 style.theme_use("clam")
 
@@ -61,7 +57,7 @@ def open_image_callback():
             ("JPEG", "*.jpeg")
         ])
     try:
-        center(root, width=1000, height=500)
+        #center(root, width=1000, height=500)
         # rep[0] is the file path of the image selected
         query_image_loaded = Image.open(rep[0])
         # resize the image for the display only
